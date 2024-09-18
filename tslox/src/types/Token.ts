@@ -39,10 +39,12 @@ export type TokenType =
     | "WHILE"
     | "EOF";
 
+export type LiteralValue = string | number;
+
 export type Token = {
     type: TokenType;
     lexeme: string;
-    literal?: string | number;
+    literal?: LiteralValue;
     line: number;
 };
 

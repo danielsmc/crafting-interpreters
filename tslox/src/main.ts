@@ -1,5 +1,5 @@
 import { scan } from "./scan.ts";
-import { tokenToString } from "./Token.ts";
+import { tokenToString } from "./types/Token.ts";
 
 let hadError = false;
 
