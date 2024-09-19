@@ -1,4 +1,6 @@
-export type Sub<T, S> = T & { type: S };
+export type Sub<T extends { type: string }, S extends T["type"]> = T & {
+    type: S;
+};
 
 export function visitor<T extends { type: string }, R = void>(
     funcs: {

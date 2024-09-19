@@ -1,4 +1,4 @@
-import { LiteralValue, Token } from "./Token.ts";
+import { Token } from "./Token.ts";
 
 export type Expr = {
     type: "Binary";
@@ -10,7 +10,7 @@ export type Expr = {
     expression: Expr;
 } | {
     type: "Literal";
-    value: LiteralValue;
+    value: boolean | null | string | number;
 } | {
     type: "Unary";
     operator: Token;

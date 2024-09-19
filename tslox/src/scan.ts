@@ -186,9 +186,22 @@ export function scan(source: string): Token[] {
         return source.slice(start, current);
     }
 
-    function addToken(type: TokenType, literal?: Token["literal"]) {
+    // The assertions are kind of ick.
+    // Maybe it would be easier to just have separate addStringToken() etc?
+    function addToken(type: Exclude<TokenType, "STRING" | "NUMBER">): void;
+    function addToken(type: "STRING", literal: string): void;
+    function addToken(type: "NUMBER", literal: number): void;
+    function addToken(type: TokenType, literal?: string | number) {
         const lexeme = curLexeme();
-        tokens.push({ type, lexeme, literal, line });
+        if (type === "NUMBER") {
+            literal = literal as number;
+            tokens.push({ type, lexeme, literal, line });
+        } else if (type === "STRING") {
+            literal = literal as string;
+            tokens.push({ type, lexeme, literal, line });
+        } else {
+            tokens.push({ type, lexeme, line });
+        }
     }
 
     function isAtEnd() {

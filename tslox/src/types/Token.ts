@@ -39,13 +39,21 @@ export type TokenType =
     | "WHILE"
     | "EOF";
 
-export type LiteralValue = string | number;
-
 export type Token = {
-    type: TokenType;
+    type: Exclude<TokenType, "NUMBER" | "STRING">;
     lexeme: string;
-    literal?: LiteralValue;
     line: number;
+    literal?: never;
+} | {
+    type: "NUMBER";
+    lexeme: string;
+    line: number;
+    literal: number;
+} | {
+    type: "STRING";
+    lexeme: string;
+    line: number;
+    literal: string;
 };
 
 export function tokenToString({ type, lexeme, literal }: Token) {

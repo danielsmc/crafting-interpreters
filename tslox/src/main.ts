@@ -1,5 +1,7 @@
+import { parse } from "./parse.ts";
+import { printAST } from "./printAST.ts";
 import { scan } from "./scan.ts";
-import { tokenToString } from "./types/Token.ts";
+import { Token } from "./types/Token.ts";
 
 let hadError = false;
 
@@ -29,14 +31,21 @@ function runPrompt() {
 
 function run(source: string) {
   const tokens = scan(source);
+  const expression = parse(tokens);
 
-  for (const token of tokens) {
-    console.log(tokenToString(token));
-  }
+  if (!expression) return;
+
+  console.log(printAST(expression));
 }
 
-export function loxError(line: number, message: string) {
-  report(line, "", message);
+export function loxError(loc: Token | number, message: string) {
+  if (typeof loc === "number") {
+    report(loc, "", message);
+  } else if (loc.type === "EOF") {
+    report(loc.line, " at end", message);
+  } else {
+    report(loc.line, ` at '${loc.lexeme}'`, message);
+  }
 }
 
 function report(line: number, where: string, message: string) {
