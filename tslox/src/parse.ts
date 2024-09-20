@@ -39,8 +39,8 @@ export function parse(tokens: Token[]) {
     }
 
     const unary: ParseLayer = (precedent) => () => {
-        if (match("BANG", "MINUS")) {
-            const operator = previous();
+        const operator = match("BANG", "MINUS");
+        if (operator) {
             const right = unary(precedent)();
             return {
                 type: "Unary",
@@ -51,18 +51,18 @@ export function parse(tokens: Token[]) {
         return precedent();
     };
 
-    const factor = leftAssoc(["SLASH", "STAR"]);
+    const factor = leftAssocBinary(["SLASH", "STAR"]);
 
-    const term = leftAssoc(["MINUS", "PLUS"]);
+    const term = leftAssocBinary(["MINUS", "PLUS"]);
 
-    const comparison = leftAssoc([
+    const comparison = leftAssocBinary([
         "GREATER",
         "GREATER_EQUAL",
         "LESS",
         "LESS_EQUAL",
     ]);
 
-    const equality = leftAssoc(["BANG_EQUAL", "EQUAL_EQUAL"]);
+    const equality = leftAssocBinary(["BANG_EQUAL", "EQUAL_EQUAL"]);
 
     const expression = pipe(primary, unary, factor, term, comparison, equality);
 
@@ -73,12 +73,15 @@ export function parse(tokens: Token[]) {
         return null;
     }
 
-    function leftAssoc(types: TokenType[]): ParseLayer {
+    function leftAssocBinary(
+        types: Sub<Expr, "Binary">["operator"]["type"][],
+    ): ParseLayer {
         return (precedent) => () => {
             let expr = precedent();
 
-            while (match(...types)) {
-                const operator = previous();
+            while (true) {
+                const operator = match(...types);
+                if (!operator) break;
                 const right = precedent();
                 expr = {
                     type: "Binary",

@@ -1,5 +1,5 @@
+import { interpret } from "./interpret.ts";
 import { parse } from "./parse.ts";
-import { printAST } from "./printAST.ts";
 import { scan } from "./scan.ts";
 import { Token } from "./types/Token.ts";
 
@@ -34,8 +34,7 @@ function run(source: string) {
   const expression = parse(tokens);
 
   if (!expression) return;
-
-  console.log(printAST(expression));
+  interpret(expression);
 }
 
 export function loxError(loc: Token | number, message: string) {
