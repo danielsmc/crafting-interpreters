@@ -4,6 +4,10 @@ import { Sub } from "./utils.ts";
 export type LoxVal = boolean | null | string | number;
 
 export type Expr = {
+    type: "Assign";
+    name: Sub<Token, "IDENTIFIER">;
+    value: Expr;
+} | {
     type: "Binary";
     left: Expr;
     operator: Sub<
@@ -30,4 +34,7 @@ export type Expr = {
     type: "Unary";
     operator: Sub<Token, "BANG" | "MINUS">;
     right: Expr;
+} | {
+    type: "Variable";
+    name: Sub<Token, "IDENTIFIER">;
 };

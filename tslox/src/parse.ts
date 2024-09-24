@@ -1,5 +1,6 @@
 import { loxError } from "./main.ts";
 import { Expr } from "./types/Expr.ts";
+import { Stmt } from "./types/Stmt.ts";
 import { Token, TokenType } from "./types/Token.ts";
 import { Sub } from "./types/utils.ts";
 
@@ -13,7 +14,9 @@ function pipe<O, F = () => O>(base: F, ...funcs: ((p: F) => F)[]): F {
     return out;
 }
 
-export function parse(tokens: Token[]) {
+const PARSER_ERROR = Symbol("Parser Error");
+
+export function parse(tokens: Token[]): Stmt[] {
     let current = 0;
 
     function primary(): Expr {
@@ -24,6 +27,11 @@ export function parse(tokens: Token[]) {
         const maybeLiteral = match("NUMBER", "STRING");
         if (maybeLiteral) {
             return { type: "Literal", value: maybeLiteral.literal };
+        }
+
+        const maybeVariable = match("IDENTIFIER");
+        if (maybeVariable) {
+            return { type: "Variable", name: maybeVariable };
         }
 
         if (match("LEFT_PAREN")) {
@@ -64,14 +72,105 @@ export function parse(tokens: Token[]) {
 
     const equality = leftAssocBinary(["BANG_EQUAL", "EQUAL_EQUAL"]);
 
-    const expression = pipe(primary, unary, factor, term, comparison, equality);
+    const assignment: ParseLayer = (precedent) => () => {
+        const expr = precedent();
+
+        const maybeEquals = match("EQUAL");
+        if (maybeEquals) {
+            const value = assignment(precedent)();
+            if (expr.type === "Variable") {
+                const { name } = expr;
+                return { type: "Assign", name, value };
+            }
+            error(maybeEquals, "Invalid assignment target.");
+        }
+
+        return expr;
+    };
+
+    const expression = pipe(
+        primary,
+        unary,
+        factor,
+        term,
+        comparison,
+        equality,
+        assignment,
+    );
+
+    function statement(): Stmt {
+        if (match("PRINT")) return printStatement();
+        if (match("LEFT_BRACE")) return block();
+        return expressionStatement();
+    }
+
+    function block(): Stmt {
+        const statements: Stmt[] = [];
+        while (!check("RIGHT_BRACE") && !isAtEnd()) {
+            const s = declaration();
+            s && statements.push(s);
+        }
+        consume("RIGHT_BRACE", "Expect '}' after block.");
+        return {
+            type: "Block",
+            statements,
+        };
+    }
+
+    function printStatement(): Stmt {
+        const value = expression();
+        consume("SEMICOLON", "Expect ';' after value.");
+        return {
+            type: "Print",
+            expression: value,
+        };
+    }
+
+    function expressionStatement(): Stmt {
+        const value = expression();
+        consume("SEMICOLON", "Expect ';' after expression.");
+        return {
+            type: "Expression",
+            expression: value,
+        };
+    }
+
+    function varDeclaration(): Stmt {
+        const name = consume("IDENTIFIER", "Expect variable name.");
+        const initializer = match("EQUAL") ? expression() : undefined;
+        consume("SEMICOLON", "Expect ';' after variable declaration");
+        return {
+            type: "Var",
+            name,
+            initializer,
+        };
+    }
+
+    function declaration(): Stmt | null {
+        try {
+            if (match("VAR")) return varDeclaration();
+            return statement();
+        } catch (e) {
+            if (e !== PARSER_ERROR) throw e;
+            synchronize();
+            return null;
+        }
+    }
 
     //////// Actual entry point
-    try {
-        return expression();
-    } catch {
-        return null;
+
+    const statements: Stmt[] = [];
+    while (!isAtEnd()) {
+        const s = declaration();
+        s && statements.push(s);
     }
+    return statements;
+
+    // try {
+    //     return expression();
+    // } catch {
+    //     return null;
+    // }
 
     function leftAssocBinary(
         types: Sub<Expr, "Binary">["operator"]["type"][],
@@ -135,7 +234,7 @@ export function parse(tokens: Token[]) {
 
     function error(token: Token, message: string) {
         loxError(token, message);
-        return new Error();
+        return PARSER_ERROR;
     }
 
     function synchronize() {
