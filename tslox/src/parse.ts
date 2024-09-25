@@ -1,18 +1,9 @@
 import { loxError } from "./main.ts";
 import { Expr } from "./types/Expr.ts";
+import { ParseLayer, stack } from "./types/ParseLayer.ts";
 import { Stmt } from "./types/Stmt.ts";
 import { Token, TokenType } from "./types/Token.ts";
 import { Sub } from "./types/utils.ts";
-
-type ParseLayer = (precedent: () => Expr) => () => Expr;
-
-function pipe<O, F = () => O>(base: F, ...funcs: ((p: F) => F)[]): F {
-    let out = base;
-    for (const f of funcs) {
-        out = f(out);
-    }
-    return out;
-}
 
 const PARSER_ERROR = Symbol("Parser Error");
 
@@ -46,10 +37,10 @@ export function parse(tokens: Token[]): Stmt[] {
         throw error(peek(), "Expect expression.");
     }
 
-    const unary: ParseLayer = (precedent) => () => {
+    const unary: ParseLayer<Expr> = (precedent, self) => () => {
         const operator = match("BANG", "MINUS");
         if (operator) {
-            const right = unary(precedent)();
+            const right = self();
             return {
                 type: "Unary",
                 operator,
@@ -59,25 +50,12 @@ export function parse(tokens: Token[]): Stmt[] {
         return precedent();
     };
 
-    const factor = leftAssocBinary(["SLASH", "STAR"]);
-
-    const term = leftAssocBinary(["MINUS", "PLUS"]);
-
-    const comparison = leftAssocBinary([
-        "GREATER",
-        "GREATER_EQUAL",
-        "LESS",
-        "LESS_EQUAL",
-    ]);
-
-    const equality = leftAssocBinary(["BANG_EQUAL", "EQUAL_EQUAL"]);
-
-    const assignment: ParseLayer = (precedent) => () => {
+    const assignment: ParseLayer<Expr> = (precedent, self) => () => {
         const expr = precedent();
 
         const maybeEquals = match("EQUAL");
         if (maybeEquals) {
-            const value = assignment(precedent)();
+            const value = self();
             if (expr.type === "Variable") {
                 const { name } = expr;
                 return { type: "Assign", name, value };
@@ -88,13 +66,13 @@ export function parse(tokens: Token[]): Stmt[] {
         return expr;
     };
 
-    const expression = pipe(
+    const expression = stack(
         primary,
         unary,
-        factor,
-        term,
-        comparison,
-        equality,
+        leftAssocBinary(["SLASH", "STAR"]),
+        leftAssocBinary(["MINUS", "PLUS"]),
+        leftAssocBinary(["GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL"]),
+        leftAssocBinary(["BANG_EQUAL", "EQUAL_EQUAL"]),
         assignment,
     );
 
@@ -174,7 +152,7 @@ export function parse(tokens: Token[]): Stmt[] {
 
     function leftAssocBinary(
         types: Sub<Expr, "Binary">["operator"]["type"][],
-    ): ParseLayer {
+    ): ParseLayer<Expr> {
         return (precedent) => () => {
             let expr = precedent();
 
