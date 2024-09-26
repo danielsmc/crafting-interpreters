@@ -1,17 +1,19 @@
 import { Expr } from "./Expr.ts";
 import { Token } from "./Token.ts";
+import { SubTypes } from "./utils.ts";
 
-export type Stmt = {
-    type: "Block";
-    statements: Stmt[];
-} | {
-    type: "Expression";
-    expression: Expr;
-} | {
-    type: "Print";
-    expression: Expr;
-} | {
-    type: "Var";
-    name: Token;
-    initializer: Expr | undefined;
-};
+export type Stmt = SubTypes<{
+    Block: {
+        statements: Stmt[];
+    };
+    Expression: {
+        expression: Expr;
+    };
+    Print: {
+        expression: Expr;
+    };
+    Var: {
+        name: Token;
+        initializer: Expr | undefined;
+    };
+}>;

@@ -1,9 +1,24 @@
-export type Sub<T extends { type: string }, S extends T["type"]> = T & {
+// Really just for nicer type hints. The conditional seems to be necessary
+export type Flatten<T> = T extends object ? { [K in keyof T]: T[K] } : T;
+
+type AllPossibleKeys = string | number | symbol;
+type Typed<K extends AllPossibleKeys = AllPossibleKeys> = { type: K };
+
+export type SubTypes<T extends Record<string, Record<string, unknown>>> = {
+    [K in keyof T]: Flatten<
+        & Typed<K>
+        & {
+            [J in keyof T[K]]: T[K][J];
+        }
+    >;
+}[keyof T];
+
+export type Sub<T extends Typed, S extends T["type"]> = T & {
     type: S;
 };
 
 export function visitor<
-    T extends { type: string },
+    T extends Typed,
     R = void,
     C extends unknown[] = [],
 >(
