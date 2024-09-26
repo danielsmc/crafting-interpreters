@@ -79,10 +79,55 @@ export function parse(tokens: Token[]): Stmt[] {
     );
 
     function statement(): Stmt {
+        if (match("FOR")) return forStatement();
         if (match("IF")) return ifStatement();
         if (match("PRINT")) return printStatement();
+        if (match("WHILE")) return whileStatement();
         if (match("LEFT_BRACE")) return block();
         return expressionStatement();
+    }
+
+    function forStatement(): Stmt {
+        consume("LEFT_PAREN", "Expect '(' after 'for'.");
+        let initializer: Stmt | undefined = undefined;
+        if (match("SEMICOLON")) {
+            // skip
+        } else if (match("VAR")) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        const condition: Expr = check("SEMICOLON")
+            ? { type: "Literal", value: true }
+            : expression();
+        consume("SEMICOLON", "Expect ';' after loop condition.");
+
+        const increment = check("RIGHT_PAREN") ? undefined : expression();
+        consume("RIGHT_PAREN", "Expect ')' after for clauses.");
+
+        let body = statement();
+
+        if (increment) {
+            body = {
+                type: "Block",
+                statements: [
+                    body,
+                    {
+                        type: "Expression",
+                        expression: increment,
+                    },
+                ],
+            };
+        }
+
+        body = { type: "While", condition, body };
+
+        if (initializer) {
+            body = { type: "Block", statements: [initializer, body] };
+        }
+
+        return body;
     }
 
     function ifStatement(): Stmt {
@@ -107,6 +152,20 @@ export function parse(tokens: Token[]): Stmt[] {
         return {
             type: "Print",
             expression: value,
+        };
+    }
+
+    function whileStatement(): Stmt {
+        consume("LEFT_PAREN", "Expect '(' after 'while'.");
+        const condition = expression();
+        consume("RIGHT_PAREN", "Expect ')' after condition.");
+
+        const body = statement();
+
+        return {
+            type: "While",
+            condition,
+            body,
         };
     }
 

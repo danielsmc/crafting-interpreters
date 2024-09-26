@@ -38,6 +38,11 @@ const execute = visitor<Stmt, void, [Environment]>({
         const value = s.initializer ? evaluate(s.initializer, env) : null;
         env.define(s.name.lexeme, value);
     },
+    While: (s, env) => {
+        while (isTruthy(evaluate(s.condition, env))) {
+            execute(s.body, env);
+        }
+    },
     Block: ({ statements }, parentEnv) => {
         const env = new Environment(parentEnv);
         for (const s of statements) {

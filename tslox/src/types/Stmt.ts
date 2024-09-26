@@ -21,4 +21,8 @@ export type Stmt = SubTypes<{
         name: Token;
         initializer: Expr | undefined;
     };
+    While: {
+        condition: Expr;
+        body: Stmt;
+    };
 }>;
