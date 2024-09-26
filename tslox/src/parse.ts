@@ -77,9 +77,35 @@ export function parse(tokens: Token[]): Stmt[] {
     );
 
     function statement(): Stmt {
+        if (match("IF")) return ifStatement();
         if (match("PRINT")) return printStatement();
         if (match("LEFT_BRACE")) return block();
         return expressionStatement();
+    }
+
+    function ifStatement(): Stmt {
+        consume("LEFT_PAREN", "Expect '(' after 'if'.");
+        const condition = expression();
+        consume("RIGHT_PAREN", "Expect ')' after condition.");
+
+        const thenBranch = statement();
+        const elseBranch = match("ELSE") ? statement() : undefined;
+
+        return {
+            type: "If",
+            condition,
+            thenBranch,
+            elseBranch,
+        };
+    }
+
+    function printStatement(): Stmt {
+        const value = expression();
+        consume("SEMICOLON", "Expect ';' after value.");
+        return {
+            type: "Print",
+            expression: value,
+        };
     }
 
     function block(): Stmt {
@@ -92,15 +118,6 @@ export function parse(tokens: Token[]): Stmt[] {
         return {
             type: "Block",
             statements,
-        };
-    }
-
-    function printStatement(): Stmt {
-        const value = expression();
-        consume("SEMICOLON", "Expect ';' after value.");
-        return {
-            type: "Print",
-            expression: value,
         };
     }
 

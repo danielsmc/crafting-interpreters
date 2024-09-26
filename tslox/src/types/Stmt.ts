@@ -9,6 +9,11 @@ export type Stmt = SubTypes<{
     Expression: {
         expression: Expr;
     };
+    If: {
+        condition: Expr;
+        thenBranch: Stmt;
+        elseBranch: Stmt | undefined;
+    };
     Print: {
         expression: Expr;
     };

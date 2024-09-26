@@ -26,6 +26,13 @@ function stringify(v: LoxVal) {
 
 const execute = visitor<Stmt, void, [Environment]>({
     Expression: (s, env) => evaluate(s.expression, env),
+    If: (s, env) => {
+        if (isTruthy(evaluate(s.condition, env))) {
+            execute(s.thenBranch, env);
+        } else if (s.elseBranch) {
+            execute(s.elseBranch, env);
+        }
+    },
     Print: (s, env) => console.log(stringify(evaluate(s.expression, env))),
     Var: (s, env) => {
         const value = s.initializer ? evaluate(s.initializer, env) : null;
