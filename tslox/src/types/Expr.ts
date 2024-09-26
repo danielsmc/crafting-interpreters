@@ -22,6 +22,8 @@ export type Expr = SubTypes<{
             | "LESS_EQUAL"
             | "BANG_EQUAL"
             | "EQUAL_EQUAL"
+            | "AND"
+            | "OR"
         >;
         right: Expr;
     };

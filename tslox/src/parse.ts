@@ -73,6 +73,8 @@ export function parse(tokens: Token[]): Stmt[] {
         leftAssocBinary(["MINUS", "PLUS"]),
         leftAssocBinary(["GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL"]),
         leftAssocBinary(["BANG_EQUAL", "EQUAL_EQUAL"]),
+        leftAssocBinary(["AND"]),
+        leftAssocBinary(["OR"]),
         assignment,
     );
 
@@ -160,12 +162,6 @@ export function parse(tokens: Token[]): Stmt[] {
         s && statements.push(s);
     }
     return statements;
-
-    // try {
-    //     return expression();
-    // } catch {
-    //     return null;
-    // }
 
     function leftAssocBinary(
         types: Sub<Expr, "Binary">["operator"]["type"][],

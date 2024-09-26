@@ -73,10 +73,18 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
         }
     },
     "Binary": (e, env) => {
+        const { type } = e.operator;
         const left = evaluate(e.left, env);
+
+        if (type === "OR") {
+            return isTruthy(left) ? left : evaluate(e.right, env);
+        } else if (type === "AND") {
+            return isTruthy(left) ? evaluate(e.right, env) : left;
+        }
+
         const right = evaluate(e.right, env);
 
-        switch (e.operator.type) {
+        switch (type) {
             case "GREATER":
                 return castNum(left) > castNum(right);
             case "GREATER_EQUAL":
