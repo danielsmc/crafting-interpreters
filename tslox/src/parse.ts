@@ -37,6 +37,36 @@ export function parse(tokens: Token[]): Stmt[] {
         throw error(peek(), "Expect expression.");
     }
 
+    const call: ParseLayer<Expr> = (precedent) => () => {
+        let expr = precedent();
+        while (true) {
+            if (match("LEFT_PAREN")) {
+                const args: Expr[] = [];
+                if (!check("RIGHT_PAREN")) {
+                    if (args.length >= 255) {
+                        error(peek(), "Can't have more than 255 arguments.");
+                    }
+                    do {
+                        args.push(expression());
+                    } while (match("COMMA"));
+                }
+                const paren = consume(
+                    "RIGHT_PAREN",
+                    "Expect ')' after arguments.",
+                );
+                expr = {
+                    type: "Call",
+                    callee: expr,
+                    paren,
+                    args,
+                };
+            } else {
+                break;
+            }
+        }
+        return expr;
+    };
+
     const unary: ParseLayer<Expr> = (precedent, self) => () => {
         const operator = match("BANG", "MINUS");
         if (operator) {
@@ -68,6 +98,7 @@ export function parse(tokens: Token[]): Stmt[] {
 
     const expression = stack(
         primary,
+        call,
         unary,
         leftAssocBinary(["SLASH", "STAR"]),
         leftAssocBinary(["MINUS", "PLUS"]),

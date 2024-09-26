@@ -1,7 +1,6 @@
+import { LoxVal } from "./LoxTypes.ts";
 import { Token } from "./Token.ts";
 import { Sub, SubTypes } from "./utils.ts";
-
-export type LoxVal = boolean | null | string | number;
 
 export type Expr = SubTypes<{
     Assign: {
@@ -26,6 +25,11 @@ export type Expr = SubTypes<{
             | "OR"
         >;
         right: Expr;
+    };
+    Call: {
+        callee: Expr;
+        paren: Token;
+        args: Expr[];
     };
     Grouping: {
         expression: Expr;

@@ -1,6 +1,7 @@
 import { loxError } from "./main.ts";
 import { Environment } from "./types/Environment.ts";
-import { Expr, LoxVal } from "./types/Expr.ts";
+import { Expr } from "./types/Expr.ts";
+import { LoxCallable, LoxVal } from "./types/LoxTypes.ts";
 import { RuntimeError } from "./types/RuntimeError.ts";
 import { Stmt } from "./types/Stmt.ts";
 import { Sub, visitor } from "./types/utils.ts";
@@ -123,6 +124,20 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
         const value = evaluate(e.value, env);
         env.assign(e.name, value);
         return value;
+    },
+    Call: (e, env) => {
+        const callee = evaluate(e.callee, env);
+        const args = e.args.map((a) => evaluate(a, env));
+        if (!(callee instanceof LoxCallable)) {
+            throw new RuntimeError("Tried to call a non-callable", e.paren);
+        }
+        if (args.length !== callee.arity) {
+            throw new RuntimeError(
+                `Expected ${callee.arity} arguments but got ${args.length}.`,
+                e.paren,
+            );
+        }
+        return callee.call(env, args);
     },
 });
 
