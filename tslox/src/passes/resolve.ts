@@ -1,4 +1,4 @@
-import { loxError } from "../main.ts";
+import { loxError } from "../run.ts";
 import { Expr } from "../types/Expr.ts";
 import { Stmt } from "../types/Stmt.ts";
 import { Token } from "../types/Token.ts";

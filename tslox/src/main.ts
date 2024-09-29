@@ -1,11 +1,5 @@
-import { interpret } from "./passes/interpret.ts";
-import { parse } from "./passes/parse.ts";
-import { resolve } from "./passes/resolve.ts";
-import { scan } from "./passes/scan.ts";
-import { Environment, initGlobalEnv } from "./types/Environment.ts";
-import { Token } from "./types/Token.ts";
-
-let hadError = false;
+import { run } from "./run.ts";
+import { initGlobalEnv } from "./types/Environment.ts";
 
 const [file, ...extras] = Deno.args;
 if (extras.length) {
@@ -19,7 +13,7 @@ if (extras.length) {
 
 function runFile(file: string) {
   const env = initGlobalEnv();
-  run(Deno.readTextFileSync(file), env);
+  const hadError = run(Deno.readTextFileSync(file), env);
   if (hadError) Deno.exit(65);
 }
 
@@ -29,30 +23,5 @@ function runPrompt() {
     const line = prompt("> ");
     if (line === null) break;
     run(line, env);
-    hadError = false;
   }
-}
-
-function run(source: string, env: Environment) {
-  const tokens = scan(source);
-  const statements = parse(tokens);
-  if (hadError) return;
-  resolve(statements);
-  if (hadError) return;
-  interpret(statements, env);
-}
-
-export function loxError(loc: Token | number, message: string) {
-  if (typeof loc === "number") {
-    report(loc, "", message);
-  } else if (loc.type === "EOF") {
-    report(loc.line, " at end", message);
-  } else {
-    report(loc.line, ` at '${loc.lexeme}'`, message);
-  }
-}
-
-function report(line: number, where: string, message: string) {
-  console.log(`[line ${line}] Error ${where}: ${message}`);
-  hadError = true;
 }

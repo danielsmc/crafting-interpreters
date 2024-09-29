@@ -1,4 +1,4 @@
-import { loxError } from "../main.ts";
+import { loxError } from "../run.ts";
 import { Token, TokenType } from "../types/Token.ts";
 
 const keywords = Object.fromEntries(

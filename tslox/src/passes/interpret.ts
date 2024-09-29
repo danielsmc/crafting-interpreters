@@ -1,4 +1,4 @@
-import { loxError } from "../main.ts";
+import { loxError } from "../run.ts";
 import { Environment } from "../types/Environment.ts";
 import { Expr } from "../types/Expr.ts";
 import { LoxCallable, LoxFunction, LoxVal } from "../types/LoxTypes.ts";
