@@ -1,5 +1,5 @@
 import { loxError } from "../run.ts";
-import { Token, TokenType } from "../types/Token.ts";
+import { Token } from "../types/Token.ts";
 
 const keywords = Object.fromEntries(
     ([
@@ -19,7 +19,7 @@ const keywords = Object.fromEntries(
         "TRUE",
         "VAR",
         "WHILE",
-    ] satisfies TokenType[]).map((k) => [k.toLowerCase(), k]),
+    ] satisfies Token["type"][]).map((k) => [k.toLowerCase(), k]),
 );
 
 export function scan(source: string): Token[] {
@@ -116,7 +116,7 @@ export function scan(source: string): Token[] {
 
     function identifier() {
         while (isAlphaNumeric(peek())) advance();
-        const type: TokenType = keywords[curLexeme()] ?? "IDENTIFIER";
+        const type: Token["type"] = keywords[curLexeme()] ?? "IDENTIFIER";
         addToken(type);
     }
 
@@ -188,10 +188,10 @@ export function scan(source: string): Token[] {
 
     // The assertions are kind of ick.
     // Maybe it would be easier to just have separate addStringToken() etc?
-    function addToken(type: Exclude<TokenType, "STRING" | "NUMBER">): void;
+    function addToken(type: Exclude<Token["type"], "STRING" | "NUMBER">): void;
     function addToken(type: "STRING", literal: string): void;
     function addToken(type: "NUMBER", literal: number): void;
-    function addToken(type: TokenType, literal?: string | number) {
+    function addToken(type: Token["type"], literal?: string | number) {
         const lexeme = curLexeme();
         if (type === "NUMBER") {
             literal = literal as number;

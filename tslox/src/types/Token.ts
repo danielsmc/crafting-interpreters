@@ -1,6 +1,6 @@
 import { SubTypes } from "./utils.ts";
 
-export type TokenType =
+type TokenType =
     | "LEFT_PAREN"
     | "RIGHT_PAREN"
     | "LEFT_BRACE"

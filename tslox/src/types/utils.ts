@@ -2,7 +2,7 @@
 export type Flatten<T> = T extends object ? { [K in keyof T]: T[K] } : T;
 
 type AllPossibleKeys = string | number | symbol;
-type Typed<K extends AllPossibleKeys = AllPossibleKeys> = { type: K };
+export type Typed<K extends AllPossibleKeys = AllPossibleKeys> = { type: K };
 
 export type SubTypes<T extends Record<string, Record<string, unknown>>> = {
     [K in keyof T]: Flatten<
