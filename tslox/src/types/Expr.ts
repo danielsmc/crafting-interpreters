@@ -6,6 +6,7 @@ export type Expr = SubTypes<{
     Assign: {
         name: Sub<Token, "IDENTIFIER">;
         value: Expr;
+        distance?: number;
     };
     Binary: {
         left: Expr;
@@ -43,5 +44,6 @@ export type Expr = SubTypes<{
     };
     Variable: {
         name: Sub<Token, "IDENTIFIER">;
+        distance?: number;
     };
 }>;

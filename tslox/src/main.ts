@@ -1,6 +1,7 @@
-import { interpret } from "./interpret.ts";
-import { parse } from "./parse.ts";
-import { scan } from "./scan.ts";
+import { interpret } from "./passes/interpret.ts";
+import { parse } from "./passes/parse.ts";
+import { resolve } from "./passes/resolve.ts";
+import { scan } from "./passes/scan.ts";
 import { Environment, initGlobalEnv } from "./types/Environment.ts";
 import { Token } from "./types/Token.ts";
 
@@ -35,6 +36,7 @@ function runPrompt() {
 function run(source: string, env: Environment) {
   const tokens = scan(source);
   const statements = parse(tokens);
+  resolve(statements);
 
   if (hadError) return;
   interpret(statements, env);

@@ -1,4 +1,4 @@
-import { interpret } from "../interpret.ts";
+import { interpret } from "../passes/interpret.ts";
 import { Environment } from "./Environment.ts";
 import { Return } from "./RuntimeError.ts";
 import { Stmt } from "./Stmt.ts";

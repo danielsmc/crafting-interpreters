@@ -1,9 +1,9 @@
-import { loxError } from "./main.ts";
-import { Expr } from "./types/Expr.ts";
-import { ParseLayer, stack } from "./types/ParseLayer.ts";
-import { Stmt } from "./types/Stmt.ts";
-import { Token, TokenType } from "./types/Token.ts";
-import { Sub } from "./types/utils.ts";
+import { loxError } from "../main.ts";
+import { Expr } from "../types/Expr.ts";
+import { ParseLayer, stack } from "../types/ParseLayer.ts";
+import { Stmt } from "../types/Stmt.ts";
+import { Token, TokenType } from "../types/Token.ts";
+import { Sub } from "../types/utils.ts";
 
 const PARSER_ERROR = Symbol("Parser Error");
 

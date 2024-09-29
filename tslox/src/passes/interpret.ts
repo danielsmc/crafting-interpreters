@@ -1,10 +1,10 @@
-import { loxError } from "./main.ts";
-import { Environment } from "./types/Environment.ts";
-import { Expr } from "./types/Expr.ts";
-import { LoxCallable, LoxFunction, LoxVal } from "./types/LoxTypes.ts";
-import { Return, RuntimeError } from "./types/RuntimeError.ts";
-import { Stmt } from "./types/Stmt.ts";
-import { Sub, visitor } from "./types/utils.ts";
+import { loxError } from "../main.ts";
+import { Environment } from "../types/Environment.ts";
+import { Expr } from "../types/Expr.ts";
+import { LoxCallable, LoxFunction, LoxVal } from "../types/LoxTypes.ts";
+import { Return, RuntimeError } from "../types/RuntimeError.ts";
+import { Stmt } from "../types/Stmt.ts";
+import { Sub, visitor } from "../types/utils.ts";
 
 export function interpret(statements: Stmt[], env: Environment) {
     try {
