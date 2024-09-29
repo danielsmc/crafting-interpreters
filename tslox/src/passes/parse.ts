@@ -9,7 +9,6 @@ const PARSER_ERROR = Symbol("Parser Error");
 
 export function parse(tokens: Token[]): Stmt[] {
     let current = 0;
-    const canReturn = [false];
 
     function primary(): Expr {
         if (match("FALSE")) return { type: "Literal", value: false };
@@ -190,9 +189,6 @@ export function parse(tokens: Token[]): Stmt[] {
 
     function returnStatement(): Stmt {
         const keyword = previous();
-        if (!canReturn[canReturn.length - 1]) {
-            error(keyword, "Can't return outside of a function.");
-        }
         const value = check("SEMICOLON") ? undefined : expression();
         consume("SEMICOLON", "Expect ';' after return value.");
         return {
@@ -254,9 +250,7 @@ export function parse(tokens: Token[]): Stmt[] {
         }
         consume("RIGHT_PAREN", "Expect ')' after parameters.");
         consume("LEFT_BRACE", `Expect '{' before ${kind} body.`);
-        canReturn.push(true);
         const body = block().statements;
-        canReturn.pop();
         return {
             type: "Function",
             name,

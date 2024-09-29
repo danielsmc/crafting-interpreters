@@ -4,8 +4,11 @@ import { Stmt } from "../types/Stmt.ts";
 import { Token } from "../types/Token.ts";
 import { Sub, visitor } from "../types/utils.ts";
 
+type FunctionType = "NONE" | "FUNCTION";
+
 export function resolve(statements: Stmt[]) {
     const scopes: Record<string, boolean>[] = [];
+    let currentFunction: FunctionType = "NONE";
     const noScopes = () => scopes.length === 0;
     const topScope = () => scopes[scopes.length - 1];
 
@@ -36,7 +39,7 @@ export function resolve(statements: Stmt[]) {
         "Function": (s) => {
             declare(s.name);
             define(s.name);
-            resolveFunction(s);
+            resolveFunction(s, "FUNCTION");
         },
         Expression: (s) => resolve(s.expression),
         If: (s) => {
@@ -46,6 +49,9 @@ export function resolve(statements: Stmt[]) {
         },
         Print: (s) => resolve(s.expression),
         Return: (s) => {
+            if (currentFunction === "NONE") {
+                loxError(s.keyword, "Can't return from top-level code.");
+            }
             if (s.value) resolve(s.value);
         },
         While: (s) => {
@@ -67,7 +73,9 @@ export function resolve(statements: Stmt[]) {
 
     statements.forEach(resolve);
 
-    function resolveFunction(func: Sub<Stmt, "Function">) {
+    function resolveFunction(func: Sub<Stmt, "Function">, type: FunctionType) {
+        const enclosingFunction = currentFunction;
+        currentFunction = type;
         beginScope();
         func.params.forEach((param) => {
             declare(param);
@@ -75,6 +83,7 @@ export function resolve(statements: Stmt[]) {
         });
         func.body.forEach(resolve);
         endScope();
+        currentFunction = enclosingFunction;
     }
 
     function beginScope() {
@@ -87,7 +96,11 @@ export function resolve(statements: Stmt[]) {
 
     function declare(name: Token) {
         if (noScopes()) return;
-        topScope()[name.lexeme] = false;
+        const scope = topScope();
+        if (scope[name.lexeme] !== undefined) {
+            loxError(name, "Already a variable with this name in this scope.");
+        }
+        scope[name.lexeme] = false;
     }
 
     function define(name: Token) {

@@ -36,8 +36,8 @@ function runPrompt() {
 function run(source: string, env: Environment) {
   const tokens = scan(source);
   const statements = parse(tokens);
+  if (hadError) return;
   resolve(statements);
-
   if (hadError) return;
   interpret(statements, env);
 }

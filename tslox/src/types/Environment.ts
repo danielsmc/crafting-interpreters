@@ -4,38 +4,41 @@ import { Token } from "./Token.ts";
 
 export class Environment {
     values = new Map<string, LoxVal>();
+    ancestors: Environment[];
 
-    constructor(private enclosing?: Environment) {}
+    constructor(enclosing?: Environment) {
+        this.ancestors = [
+            this,
+            ...enclosing?.ancestors ?? [],
+        ];
+    }
+
+    get globals() {
+        return this.ancestors[this.ancestors.length - 1].values;
+    }
 
     define(name: string, value: LoxVal) {
         this.values.set(name, value);
     }
 
-    get(name: Token): LoxVal {
-        const val = this.values.get(name.lexeme);
+    getAt(name: Token, distance?: number): LoxVal {
+        const val = distance === undefined
+            ? this.globals.get(name.lexeme)
+            : this.ancestors[distance].values.get(name.lexeme);
         if (val === undefined) {
-            if (this.enclosing) return this.enclosing.get(name);
-
             throw new RuntimeError(
-                `Undefined variable '${name.lexeme}'.`,
+                `Undeclared variable '${name.lexeme}'.`,
                 name,
             );
         }
         return val;
     }
 
-    assign(name: Token, value: LoxVal): void {
-        if (this.values.has(name.lexeme)) {
-            this.values.set(name.lexeme, value);
-            return;
-        }
-
-        if (this.enclosing) return this.enclosing.assign(name, value);
-
-        throw new RuntimeError(
-            `Undefined variable '${name.lexeme}'.`,
-            name,
-        );
+    assignAt(name: Token, value: LoxVal, distance?: number): void {
+        this.getAt(name, distance);
+        distance === undefined
+            ? this.globals.set(name.lexeme, value)
+            : this.ancestors[distance].values.set(name.lexeme, value);
     }
 }
 

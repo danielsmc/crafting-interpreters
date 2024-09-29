@@ -124,10 +124,10 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
                 throw new Error("Incompatible operands");
         }
     },
-    Variable: (e, env) => env.get(e.name),
+    Variable: (e, env) => env.getAt(e.name, e.distance),
     Assign: (e, env) => {
         const value = evaluate(e.value, env);
-        env.assign(e.name, value);
+        env.assignAt(e.name, value, e.distance);
         return value;
     },
     Call: (e, env) => {
