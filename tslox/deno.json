@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --watch src/main.ts"
+    "dev": "deno run --watch --check --allow-read=../lox_programs src/main.ts"
   },
   "imports": {
   },

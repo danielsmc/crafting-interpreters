@@ -9,6 +9,7 @@ const PARSER_ERROR = Symbol("Parser Error");
 
 export function parse(tokens: Token[]): Stmt[] {
     let current = 0;
+    const canReturn = [false];
 
     function primary(): Expr {
         if (match("FALSE")) return { type: "Literal", value: false };
@@ -113,6 +114,7 @@ export function parse(tokens: Token[]): Stmt[] {
         if (match("FOR")) return forStatement();
         if (match("IF")) return ifStatement();
         if (match("PRINT")) return printStatement();
+        if (match("RETURN")) return returnStatement();
         if (match("WHILE")) return whileStatement();
         if (match("LEFT_BRACE")) return block();
         return expressionStatement();
@@ -186,6 +188,20 @@ export function parse(tokens: Token[]): Stmt[] {
         };
     }
 
+    function returnStatement(): Stmt {
+        const keyword = previous();
+        if (!canReturn[canReturn.length - 1]) {
+            error(keyword, "Can't return outside of a function.");
+        }
+        const value = check("SEMICOLON") ? undefined : expression();
+        consume("SEMICOLON", "Expect ';' after return value.");
+        return {
+            type: "Return",
+            keyword,
+            value,
+        };
+    }
+
     function whileStatement(): Stmt {
         consume("LEFT_PAREN", "Expect '(' after 'while'.");
         const condition = expression();
@@ -200,7 +216,7 @@ export function parse(tokens: Token[]): Stmt[] {
         };
     }
 
-    function block(): Stmt {
+    function block(): Sub<Stmt, "Block"> {
         const statements: Stmt[] = [];
         while (!check("RIGHT_BRACE") && !isAtEnd()) {
             const s = declaration();
@@ -222,6 +238,33 @@ export function parse(tokens: Token[]): Stmt[] {
         };
     }
 
+    function func(kind: string): Stmt {
+        const name = consume("IDENTIFIER", `Expect ${kind} name.`);
+        consume("LEFT_PAREN", `Expect '(' after ${kind} name.`);
+        const params: Token[] = [];
+        if (!check("RIGHT_PAREN")) {
+            do {
+                if (params.length >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.");
+                }
+                params.push(
+                    consume("IDENTIFIER", "Expect parameter name."),
+                );
+            } while (match("COMMA"));
+        }
+        consume("RIGHT_PAREN", "Expect ')' after parameters.");
+        consume("LEFT_BRACE", `Expect '{' before ${kind} body.`);
+        canReturn.push(true);
+        const body = block().statements;
+        canReturn.pop();
+        return {
+            type: "Function",
+            name,
+            params,
+            body,
+        };
+    }
+
     function varDeclaration(): Stmt {
         const name = consume("IDENTIFIER", "Expect variable name.");
         const initializer = match("EQUAL") ? expression() : undefined;
@@ -235,6 +278,7 @@ export function parse(tokens: Token[]): Stmt[] {
 
     function declaration(): Stmt | null {
         try {
+            if (match("FUN")) return func("function");
             if (match("VAR")) return varDeclaration();
             return statement();
         } catch (e) {
@@ -274,7 +318,7 @@ export function parse(tokens: Token[]): Stmt[] {
         };
     }
 
-    function consume(type: TokenType, message: string) {
+    function consume<T extends TokenType>(type: T, message: string) {
         const res = match(type);
         if (!res) throw error(peek(), message);
         return res;

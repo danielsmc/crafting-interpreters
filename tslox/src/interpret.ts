@@ -1,8 +1,8 @@
 import { loxError } from "./main.ts";
 import { Environment } from "./types/Environment.ts";
 import { Expr } from "./types/Expr.ts";
-import { LoxCallable, LoxVal } from "./types/LoxTypes.ts";
-import { RuntimeError } from "./types/RuntimeError.ts";
+import { LoxCallable, LoxFunction, LoxVal } from "./types/LoxTypes.ts";
+import { Return, RuntimeError } from "./types/RuntimeError.ts";
 import { Stmt } from "./types/Stmt.ts";
 import { Sub, visitor } from "./types/utils.ts";
 
@@ -27,6 +27,7 @@ function stringify(v: LoxVal) {
 
 const execute = visitor<Stmt, void, [Environment]>({
     Expression: (s, env) => evaluate(s.expression, env),
+    Function: (s, env) => env.define(s.name.lexeme, new LoxFunction(s, env)),
     If: (s, env) => {
         if (isTruthy(evaluate(s.condition, env))) {
             execute(s.thenBranch, env);
@@ -35,6 +36,9 @@ const execute = visitor<Stmt, void, [Environment]>({
         }
     },
     Print: (s, env) => console.log(stringify(evaluate(s.expression, env))),
+    Return: (s, env) => {
+        throw new Return(s.value ? evaluate(s.value, env) : null);
+    },
     Var: (s, env) => {
         const value = s.initializer ? evaluate(s.initializer, env) : null;
         env.define(s.name.lexeme, value);
@@ -56,6 +60,7 @@ function evaluate(expression: Expr, env: Environment): LoxVal {
     try {
         return innerEvaluate(expression, env);
     } catch (e) {
+        if (e instanceof Return) throw e;
         const message = (e instanceof Error) ? e.message : "Unknown error";
         if (e instanceof RuntimeError) throw e;
         throw new RuntimeError(
@@ -137,7 +142,7 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
                 e.paren,
             );
         }
-        return callee.call(env, args);
+        return callee.call(args);
     },
 });
 

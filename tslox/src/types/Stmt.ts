@@ -9,6 +9,11 @@ export type Stmt = SubTypes<{
     Expression: {
         expression: Expr;
     };
+    Function: {
+        name: Token;
+        params: Token[];
+        body: Stmt[];
+    };
     If: {
         condition: Expr;
         thenBranch: Stmt;
@@ -16,6 +21,10 @@ export type Stmt = SubTypes<{
     };
     Print: {
         expression: Expr;
+    };
+    Return: {
+        keyword: Token;
+        value: Expr | undefined;
     };
     Var: {
         name: Token;

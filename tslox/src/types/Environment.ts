@@ -1,4 +1,4 @@
-import { LoxVal } from "./Expr.ts";
+import { LoxVal, NativeFunction } from "./LoxTypes.ts";
 import { RuntimeError } from "./RuntimeError.ts";
 import { Token } from "./Token.ts";
 
@@ -37,4 +37,10 @@ export class Environment {
             name,
         );
     }
+}
+
+export function initGlobalEnv() {
+    const env = new Environment();
+    env.define("clock", new NativeFunction(() => Date.now() / 1000));
+    return env;
 }

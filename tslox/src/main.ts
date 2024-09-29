@@ -1,7 +1,7 @@
 import { interpret } from "./interpret.ts";
 import { parse } from "./parse.ts";
 import { scan } from "./scan.ts";
-import { Environment } from "./types/Environment.ts";
+import { Environment, initGlobalEnv } from "./types/Environment.ts";
 import { Token } from "./types/Token.ts";
 
 let hadError = false;
@@ -17,13 +17,13 @@ if (extras.length) {
 }
 
 function runFile(file: string) {
-  const env = new Environment();
+  const env = initGlobalEnv();
   run(Deno.readTextFileSync(file), env);
   if (hadError) Deno.exit(65);
 }
 
 function runPrompt() {
-  const env = new Environment();
+  const env = initGlobalEnv();
   while (true) {
     const line = prompt("> ");
     if (line === null) break;
