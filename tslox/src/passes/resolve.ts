@@ -36,7 +36,10 @@ export function resolve(statements: Stmt[]) {
             resolve(e.value);
             e.distance = resolveLocal(e.name);
         },
-        "Function": (s) => {
+        Function: (s) => {
+            if (s.params.length > 255) {
+                loxError(s.params[255], "Can't have more than 255 parameters.");
+            }
             declare(s.name);
             define(s.name);
             resolveFunction(s, "FUNCTION");
@@ -63,6 +66,9 @@ export function resolve(statements: Stmt[]) {
             resolve(e.right);
         },
         Call: (e) => {
+            if (e.args.length > 255) {
+                loxError(e.paren, "Can't have more than 255 arguments.");
+            }
             resolve(e.callee);
             e.args.forEach(resolve);
         },

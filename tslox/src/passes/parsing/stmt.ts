@@ -139,12 +139,6 @@ const func: (kind: string) => ParseFunc<Token, Stmt> =
         const params: Token[] = [];
         if (!parser.check("RIGHT_PAREN")) {
             do {
-                if (params.length >= 255) {
-                    parser.error(
-                        parser.peek(),
-                        "Can't have more than 255 parameters.",
-                    );
-                }
                 params.push(
                     parser.consume("IDENTIFIER", "Expect parameter name."),
                 );

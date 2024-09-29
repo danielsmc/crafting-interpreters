@@ -36,12 +36,6 @@ const call: ParseLayer<Token, Expr> = (precedent) => (parser) => {
         if (parser.match("LEFT_PAREN")) {
             const args: Expr[] = [];
             if (!parser.check("RIGHT_PAREN")) {
-                if (args.length >= 255) {
-                    parser.error(
-                        parser.peek(),
-                        "Can't have more than 255 arguments.",
-                    );
-                }
                 do {
                     args.push(expression(parser));
                 } while (parser.match("COMMA"));
