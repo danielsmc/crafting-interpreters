@@ -1,7 +1,13 @@
 import { loxError } from "../run.ts";
 import { Environment } from "../types/Environment.ts";
 import { Expr } from "../types/Expr.ts";
-import { LoxCallable, LoxFunction, LoxVal } from "../types/LoxTypes.ts";
+import {
+    LoxCallable,
+    LoxClass,
+    LoxFunction,
+    LoxInstance,
+    LoxVal,
+} from "../types/LoxTypes.ts";
 import { Return, RuntimeError } from "../types/RuntimeError.ts";
 import { Stmt } from "../types/Stmt.ts";
 import { Sub, visitor } from "../types/utils.ts";
@@ -53,6 +59,15 @@ const execute = visitor<Stmt, void, [Environment]>({
         for (const s of statements) {
             execute(s, env);
         }
+    },
+    Class: (s, env) => {
+        env.define(s.name.lexeme, null);
+        const methods: Map<string, LoxFunction> = new Map();
+        s.methods.forEach((m) =>
+            methods.set(m.name.lexeme, new LoxFunction(m, env))
+        );
+        const klass = new LoxClass(s.name.lexeme, methods);
+        env.assignAt(s.name, klass, 0);
     },
 });
 
@@ -124,7 +139,7 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
                 throw new Error("Incompatible operands");
         }
     },
-    Variable: (e, env) => env.getAt(e.name, e.distance),
+    Variable: (e, env) => env.getAt(e.name.lexeme, e.distance),
     Assign: (e, env) => {
         const value = evaluate(e.value, env);
         env.assignAt(e.name, value, e.distance);
@@ -144,6 +159,23 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
         }
         return callee.call(args);
     },
+    Get: (e, env) => {
+        const object = evaluate(e.object, env);
+        if (object instanceof LoxInstance) {
+            return object.get(e.name);
+        }
+        throw new RuntimeError("Only instances have properties.", e.name);
+    },
+    Set: (e, env) => {
+        const object = evaluate(e.object, env);
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError("Only instances have fields.", e.name);
+        }
+        const value = evaluate(e.value, env);
+        object.set(e.name, value);
+        return value;
+    },
+    This: (e, env) => env.getAt(e.keyword.lexeme, e.distance),
 });
 
 function isTruthy(v: LoxVal): boolean {

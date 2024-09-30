@@ -1,5 +1,4 @@
 import { LoxVal, NativeFunction } from "./LoxTypes.ts";
-import { RuntimeError } from "./RuntimeError.ts";
 import { Token } from "./Token.ts";
 
 export class Environment {
@@ -21,21 +20,15 @@ export class Environment {
         this.values.set(name, value);
     }
 
-    getAt(name: Token, distance?: number): LoxVal {
+    getAt(name: string, distance?: number): LoxVal {
         const val = distance === undefined
-            ? this.globals.get(name.lexeme)
-            : this.ancestors[distance].values.get(name.lexeme);
-        if (val === undefined) {
-            throw new RuntimeError(
-                `Undeclared variable '${name.lexeme}'.`,
-                name,
-            );
-        }
-        return val;
+            ? this.globals.get(name)
+            : this.ancestors[distance].values.get(name);
+        return val!; // Resolution ~should~ ensure that the value will always be there
     }
 
     assignAt(name: Token, value: LoxVal, distance?: number): void {
-        this.getAt(name, distance);
+        this.getAt(name.lexeme, distance);
         distance === undefined
             ? this.globals.set(name.lexeme, value)
             : this.ancestors[distance].values.set(name.lexeme, value);

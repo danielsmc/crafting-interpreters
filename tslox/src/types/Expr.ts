@@ -32,11 +32,24 @@ export type Expr = SubTypes<{
         paren: Token;
         args: Expr[];
     };
+    Get: {
+        object: Expr;
+        name: Token;
+    };
     Grouping: {
         expression: Expr;
     };
     Literal: {
         value: LoxVal;
+    };
+    Set: {
+        object: Expr;
+        name: Token;
+        value: Expr;
+    };
+    This: {
+        keyword: Token;
+        distance?: number;
     };
     Unary: {
         operator: Sub<Token, "BANG" | "MINUS">;

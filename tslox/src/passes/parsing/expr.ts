@@ -7,6 +7,9 @@ const primary: ParseFunc<Token, Expr> = (parser) => {
     if (parser.match("FALSE")) return { type: "Literal", value: false };
     if (parser.match("TRUE")) return { type: "Literal", value: true };
     if (parser.match("NIL")) return { type: "Literal", value: null };
+    if (parser.match("THIS")) {
+        return { type: "This", keyword: parser.previous() };
+    }
 
     const maybeLiteral = parser.match("NUMBER", "STRING");
     if (maybeLiteral) {
@@ -50,6 +53,16 @@ const call: ParseLayer<Token, Expr> = (precedent) => (parser) => {
                 paren,
                 args,
             };
+        } else if (parser.match("DOT")) {
+            const name = parser.consume(
+                "IDENTIFIER",
+                "Expect property name after '.'",
+            );
+            expr = {
+                type: "Get",
+                object: expr,
+                name,
+            };
         } else {
             break;
         }
@@ -79,6 +92,14 @@ const assignment: ParseLayer<Token, Expr> = (precedent, self) => (parser) => {
         if (expr.type === "Variable") {
             const { name } = expr;
             return { type: "Assign", name, value };
+        } else if (expr.type === "Get") {
+            const { object, name } = expr;
+            return {
+                type: "Set",
+                object,
+                name,
+                value,
+            };
         }
         parser.error(maybeEquals, "Invalid assignment target.");
     }

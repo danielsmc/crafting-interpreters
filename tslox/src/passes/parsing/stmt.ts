@@ -132,7 +132,7 @@ const expressionStatement: ParseFunc<Token, Stmt> = (parser) => {
     };
 };
 
-const func: (kind: string) => ParseFunc<Token, Stmt> =
+const func: (kind: string) => ParseFunc<Token, Sub<Stmt, "Function">> =
     (kind: string) => (parser) => {
         const name = parser.consume("IDENTIFIER", `Expect ${kind} name.`);
         parser.consume("LEFT_PAREN", `Expect '(' after ${kind} name.`);
@@ -155,6 +155,23 @@ const func: (kind: string) => ParseFunc<Token, Stmt> =
         };
     };
 
+const classDeclaration: ParseFunc<Token, Stmt> = (parser) => {
+    const name = parser.consume("IDENTIFIER", "Expect class name.");
+    parser.consume("LEFT_BRACE", "Expect '{' before class body");
+
+    const methods: Sub<Stmt, "Function">[] = [];
+    while (!parser.check("RIGHT_BRACE") && !parser.isAtEnd()) {
+        methods.push(func("method")(parser));
+    }
+    parser.consume("RIGHT_BRACE", "Expect '}' after class body");
+
+    return {
+        type: "Class",
+        name,
+        methods,
+    };
+};
+
 const varDeclaration: ParseFunc<Token, Stmt> = (parser) => {
     const name = parser.consume("IDENTIFIER", "Expect variable name.");
     const initializer = parser.match("EQUAL") ? expression(parser) : undefined;
@@ -168,6 +185,7 @@ const varDeclaration: ParseFunc<Token, Stmt> = (parser) => {
 
 export const declaration: ParseFunc<Token, Stmt | null> = (parser) => {
     try {
+        if (parser.match("CLASS")) return classDeclaration(parser);
         if (parser.match("FUN")) return func("function")(parser);
         if (parser.match("VAR")) return varDeclaration(parser);
         return statement(parser);

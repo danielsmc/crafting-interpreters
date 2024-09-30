@@ -4,11 +4,14 @@ import { Stmt } from "../types/Stmt.ts";
 import { Token } from "../types/Token.ts";
 import { Sub, visitor } from "../types/utils.ts";
 
-type FunctionType = "NONE" | "FUNCTION";
+type FunctionType = "NONE" | "FUNCTION" | "INITIALIZER" | "METHOD";
+type ClassType = "NONE" | "CLASS";
 
 export function resolve(statements: Stmt[]) {
     const scopes: Record<string, boolean>[] = [];
     let currentFunction: FunctionType = "NONE";
+    let currentClass: ClassType = "NONE";
+
     const noScopes = () => scopes.length === 0;
     const topScope = () => scopes[scopes.length - 1];
 
@@ -17,6 +20,22 @@ export function resolve(statements: Stmt[]) {
             beginScope();
             s.statements.forEach(resolve);
             endScope();
+        },
+        Class: (s) => {
+            const enclosingClass = currentClass;
+            currentClass = "CLASS";
+            declare(s.name);
+            define(s.name);
+            beginScope();
+            topScope()["this"] = true;
+            s.methods.forEach((m) =>
+                resolveFunction(
+                    m,
+                    m.name.lexeme === "init" ? "INITIALIZER" : "METHOD",
+                )
+            );
+            endScope();
+            currentClass = enclosingClass;
         },
         Var: (s) => {
             declare(s.name);
@@ -55,7 +74,15 @@ export function resolve(statements: Stmt[]) {
             if (currentFunction === "NONE") {
                 loxError(s.keyword, "Can't return from top-level code.");
             }
-            if (s.value) resolve(s.value);
+            if (s.value) {
+                if (currentFunction === "INITIALIZER") {
+                    loxError(
+                        s.keyword,
+                        "Can't return a value from an initializer.",
+                    );
+                }
+                resolve(s.value);
+            }
         },
         While: (s) => {
             resolve(s.condition);
@@ -72,8 +99,20 @@ export function resolve(statements: Stmt[]) {
             resolve(e.callee);
             e.args.forEach(resolve);
         },
+        Get: (e) => resolve(e.object),
         Grouping: (e) => resolve(e.expression),
         Literal: () => {},
+        Set: (e) => {
+            resolve(e.value);
+            resolve(e.object);
+        },
+        This: (e) => {
+            if (currentClass === "NONE") {
+                loxError(e.keyword, "Can't use 'this' outside of a class.");
+                return;
+            }
+            e.distance = resolveLocal(e.keyword);
+        },
         Unary: (e) => resolve(e.right),
     });
 

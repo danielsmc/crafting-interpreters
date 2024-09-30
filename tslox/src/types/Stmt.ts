@@ -1,10 +1,14 @@
 import { Expr } from "./Expr.ts";
 import { Token } from "./Token.ts";
-import { SubTypes } from "./utils.ts";
+import { Sub, SubTypes } from "./utils.ts";
 
 export type Stmt = SubTypes<{
     Block: {
         statements: Stmt[];
+    };
+    Class: {
+        name: Token;
+        methods: Sub<Stmt, "Function">[];
     };
     Expression: {
         expression: Expr;
