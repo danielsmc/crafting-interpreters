@@ -47,6 +47,11 @@ export type Expr = SubTypes<{
         name: Token;
         value: Expr;
     };
+    Super: {
+        keyword: Token;
+        method: Token;
+        distance?: number;
+    };
     This: {
         keyword: Token;
         distance?: number;

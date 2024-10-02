@@ -84,13 +84,14 @@ export class LoxFunction extends LoxCallable {
 export class LoxClass extends LoxCallable {
     constructor(
         public name: string,
+        public superclass: LoxClass | undefined,
         private methods: Map<string, LoxFunction>,
     ) {
         super();
     }
 
     findMethod(name: string): LoxFunction | undefined {
-        return this.methods.get(name);
+        return this.methods.get(name) ?? this.superclass?.findMethod(name);
     }
 
     get arity(): number {

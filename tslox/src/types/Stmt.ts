@@ -8,6 +8,7 @@ export type Stmt = SubTypes<{
     };
     Class: {
         name: Token;
+        superclass: Sub<Expr, "Variable"> | undefined;
         methods: Sub<Stmt, "Function">[];
     };
     Expression: {

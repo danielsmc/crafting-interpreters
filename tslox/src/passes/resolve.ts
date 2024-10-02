@@ -5,7 +5,7 @@ import { Token } from "../types/Token.ts";
 import { Sub, visitor } from "../types/utils.ts";
 
 type FunctionType = "NONE" | "FUNCTION" | "INITIALIZER" | "METHOD";
-type ClassType = "NONE" | "CLASS";
+type ClassType = "NONE" | "CLASS" | "SUBCLASS";
 
 export function resolve(statements: Stmt[]) {
     const scopes: Record<string, boolean>[] = [];
@@ -26,6 +26,18 @@ export function resolve(statements: Stmt[]) {
             currentClass = "CLASS";
             declare(s.name);
             define(s.name);
+            if (s.superclass && s.name.lexeme === s.superclass.name.lexeme) {
+                loxError(
+                    s.superclass.name,
+                    "A class can't inherit from itself.",
+                );
+            }
+            if (s.superclass) {
+                currentClass = "SUBCLASS";
+                resolve(s.superclass);
+                beginScope();
+                topScope()["super"] = true;
+            }
             beginScope();
             topScope()["this"] = true;
             s.methods.forEach((m) =>
@@ -35,6 +47,7 @@ export function resolve(statements: Stmt[]) {
                 )
             );
             endScope();
+            if (s.superclass) endScope();
             currentClass = enclosingClass;
         },
         Var: (s) => {
@@ -105,6 +118,17 @@ export function resolve(statements: Stmt[]) {
         Set: (e) => {
             resolve(e.value);
             resolve(e.object);
+        },
+        Super: (e) => {
+            if (currentClass === "NONE") {
+                loxError(e.keyword, "Can't use 'super' outside of a class.");
+            } else if (currentClass !== "SUBCLASS") {
+                loxError(
+                    e.keyword,
+                    "Can't use 'super' in a class with no superclass.",
+                );
+            }
+            e.distance = resolveLocal(e.keyword);
         },
         This: (e) => {
             if (currentClass === "NONE") {

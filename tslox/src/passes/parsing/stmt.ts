@@ -157,6 +157,14 @@ const func: (kind: string) => ParseFunc<Token, Sub<Stmt, "Function">> =
 
 const classDeclaration: ParseFunc<Token, Stmt> = (parser) => {
     const name = parser.consume("IDENTIFIER", "Expect class name.");
+
+    let superclass: Sub<Expr, "Variable"> | undefined = undefined;
+    if (parser.match("LESS")) {
+        superclass = {
+            type: "Variable",
+            name: parser.consume("IDENTIFIER", "Expect superclass name."),
+        };
+    }
     parser.consume("LEFT_BRACE", "Expect '{' before class body");
 
     const methods: Sub<Stmt, "Function">[] = [];
@@ -168,6 +176,7 @@ const classDeclaration: ParseFunc<Token, Stmt> = (parser) => {
     return {
         type: "Class",
         name,
+        superclass,
         methods,
     };
 };

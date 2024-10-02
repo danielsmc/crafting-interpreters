@@ -16,6 +16,20 @@ const primary: ParseFunc<Token, Expr> = (parser) => {
         return { type: "Literal", value: maybeLiteral.literal };
     }
 
+    const maybeSuper = parser.match("SUPER");
+    if (maybeSuper) {
+        parser.consume("DOT", "Expect '.' after 'super'.");
+        const method = parser.consume(
+            "IDENTIFIER",
+            "Expect superclass method name.",
+        );
+        return {
+            type: "Super",
+            keyword: maybeSuper,
+            method,
+        };
+    }
+
     const maybeVariable = parser.match("IDENTIFIER");
     if (maybeVariable) {
         return { type: "Variable", name: maybeVariable };

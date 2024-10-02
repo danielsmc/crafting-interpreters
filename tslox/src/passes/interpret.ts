@@ -61,13 +61,31 @@ const execute = visitor<Stmt, void, [Environment]>({
         }
     },
     Class: (s, env) => {
+        let superclass: LoxClass | undefined = undefined;
+        if (s.superclass) {
+            const val = evaluate(s.superclass, env);
+            if (val instanceof LoxClass) {
+                superclass = val;
+            } else {throw new RuntimeError(
+                    "Superclass must be a class",
+                    s.superclass!.name,
+                );}
+        }
+
         env.define(s.name.lexeme, null);
+
+        let newEnv = env;
+        if (superclass) {
+            newEnv = new Environment(env);
+            newEnv.define("super", superclass);
+        }
+
         const methods: Map<string, LoxFunction> = new Map();
         s.methods.forEach((m) =>
-            methods.set(m.name.lexeme, new LoxFunction(m, env))
+            methods.set(m.name.lexeme, new LoxFunction(m, newEnv))
         );
-        const klass = new LoxClass(s.name.lexeme, methods);
-        env.assignAt(s.name, klass, 0);
+        const klass = new LoxClass(s.name.lexeme, superclass, methods);
+        env.assignAt(s.name, klass, 0); // <-- oldEnv
     },
 });
 
@@ -174,6 +192,34 @@ const innerEvaluate = visitor<Expr, LoxVal, [Environment]>({
         const value = evaluate(e.value, env);
         object.set(e.name, value);
         return value;
+    },
+    Super: (e, env) => {
+        const { distance } = e;
+        if (distance === undefined) {
+            throw new RuntimeError("'super' wasn't resolved.", e.keyword);
+        }
+        const superclass = env.getAt("super", distance);
+        const object = env.getAt("this", distance - 1);
+        if (!(superclass instanceof LoxClass)) {
+            throw new RuntimeError(
+                "'super' didn't resolve to a class.",
+                e.keyword,
+            );
+        }
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError(
+                "'this' didn't resolve to an instance.",
+                e.keyword,
+            );
+        }
+        const method = superclass.findMethod(e.method.lexeme);
+        if (!method) {
+            throw new RuntimeError(
+                `Undefined property '${e.method.lexeme}'.`,
+                e.method,
+            );
+        }
+        return method.bind(object, false);
     },
     This: (e, env) => env.getAt(e.keyword.lexeme, e.distance),
 });
